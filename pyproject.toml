@@ -1,0 +1,15 @@
+[project]
+name = "salon-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp[cli]>=2.3.0",
+    "tzdata>=2026.5",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
