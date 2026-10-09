@@ -31,9 +31,9 @@ Rules that hold for the whole project:
 | 2 | `booking/mock.py`, `booking/__init__.py` (`get_backend`), `booking/setmore.py` stub | Done |
 | 3 | `tests/test_mock_backend.py`, 20 tests | Done |
 | 4 | `server.py` with six tools, `BookingError` mapped to `ToolError` | Done |
-| 5 | Try it in the MCP Inspector and the Claude desktop app; record a screen capture | To do by hand |
-| 6 | `calendars/google.py`, `calendars/apple.py`, `availability.py`, seventh tool, 6 tests | Done (needs real credentials to use) |
-| 7 | README, `.env.example`, pre-push secret check, push to GitHub | README and env done; push pending |
+| 5 | Try it in the MCP Inspector and the Claude desktop app; record a screen capture | Done (screen capture skipped) |
+| 6 | `calendars/google.py`, `calendars/apple.py`, `availability.py`, seventh tool, 6 tests | Done. Apple connected; Google not set up |
+| 7 | README, `.env.example`, pre-push secret check, push to GitHub | Done |
 | Later | Fill in `booking/setmore.py` when the salon grants API access | Waiting on salon |
 
 ## Mock salon rules
