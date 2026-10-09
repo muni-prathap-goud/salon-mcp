@@ -16,8 +16,19 @@ from availability import filter_slots, merge_busy
 from booking import Appointment, BookingError, Slot, get_backend
 from calendars import apple, google
 
-mcp = MCPServer("SalonBooking", log_level="ERROR")
 backend = get_backend()
+
+INSTRUCTIONS = (
+    "These tools book appointments at Jersey's Finest, a salon in New Jersey. "
+    f"Every day and time the tools take or return is in the salon's own time zone "
+    f"({backend.timezone_name}), even if the user's computer is set to another zone. "
+    "When the user says 'morning' or '9 AM', they mean salon time, because they will "
+    "be at the salon in person. Do not convert times to the user's local zone or ask "
+    "which zone they mean. Always confirm the exact slot with the user before booking, "
+    "cancelling or rescheduling."
+)
+
+mcp = MCPServer("SalonBooking", instructions=INSTRUCTIONS, log_level="ERROR")
 SALON_TZ = ZoneInfo(backend.timezone_name)
 
 
