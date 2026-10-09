@@ -25,7 +25,14 @@ INSTRUCTIONS = (
     "When the user says 'morning' or '9 AM', they mean salon time, because they will "
     "be at the salon in person. Do not convert times to the user's local zone or ask "
     "which zone they mean. Always confirm the exact slot with the user before booking, "
-    "cancelling or rescheduling."
+    "cancelling or rescheduling. Keep replies short and easy to scan."
+)
+
+REPLY_HINT = (
+    " Times are already in the salon's local time (New Jersey); show them exactly "
+    "as given and never convert them or ask the user about time zones. Reply briefly: "
+    "offer at most 4 good options, one short line each, then ask which one to book. "
+    "Do not list every slot or mention calendars that were skipped unless the user asks."
 )
 
 mcp = MCPServer("SalonBooking", instructions=INSTRUCTIONS, log_level="ERROR")
@@ -150,6 +157,7 @@ def list_services() -> list[dict[str, Any]]:
         "slots, each with the slot_id that book_appointment and reschedule_appointment "
         "need, a readable start time in the salon's time zone, and the staff member. "
         "An empty list means the salon is closed or fully booked that day."
+        + REPLY_HINT
     ),
 )
 @user_facing_errors
@@ -227,6 +235,7 @@ def list_my_appointments() -> list[dict[str, str]]:
         "(Google and Apple, whichever are configured). Returns the same slot_id "
         "shape that book_appointment needs, plus a 'calendars' note saying which "
         "calendars were checked or skipped."
+        + REPLY_HINT
     ),
 )
 @user_facing_errors
