@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import functools
 from collections.abc import Callable
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
@@ -12,7 +12,9 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
+from availability import filter_slots, merge_busy
 from booking import Appointment, BookingError, Slot, get_backend
+from calendars import apple, google
 
 mcp = MCPServer("SalonBooking", log_level="ERROR")
 backend = get_backend()
@@ -89,6 +91,28 @@ def slots_json(day: date, slots: list[Slot]) -> dict[str, Any]:
             {"slot_id": s.id, "starts": readable(s.start), "with": s.staff_name} for s in slots
         ],
     }
+
+
+CALENDARS = [google, apple]
+CALENDAR_BUFFER_MINUTES = 30
+
+
+def busy_times_for_day(day: date) -> tuple[list[tuple[datetime, datetime]], dict[str, str]]:
+    """Busy ranges from every configured calendar, plus a status note per calendar."""
+    day_start = datetime.combine(day, time(0, 0), SALON_TZ)
+    day_end = day_start + timedelta(days=1)
+    busy_lists = []
+    status: dict[str, str] = {}
+    for calendar in CALENDARS:
+        if not calendar.is_configured():
+            status[calendar.NAME] = "not configured, skipped"
+            continue
+        try:
+            busy_lists.append(calendar.get_busy_times(day_start, day_end))
+            status[calendar.NAME] = "checked"
+        except Exception as exc:  # a calendar outage should not hide the salon's slots
+            status[calendar.NAME] = f"error, skipped: {exc}"
+    return merge_busy(*busy_lists), status
 
 
 # ----- tools -------------------------------------------------------------------
@@ -182,6 +206,31 @@ def reschedule_appointment(
 @user_facing_errors
 def list_my_appointments() -> list[dict[str, str]]:
     return [appointment_json(a) for a in backend.list_appointments()]
+
+
+@mcp.tool(
+    name="find_slots_that_fit_my_calendar",
+    description=(
+        "Like check_open_slots, but only returns salon slots that leave at least "
+        "30 minutes clear on either side of events in the user's own calendars "
+        "(Google and Apple, whichever are configured). Returns the same slot_id "
+        "shape that book_appointment needs, plus a 'calendars' note saying which "
+        "calendars were checked or skipped."
+    ),
+)
+@user_facing_errors
+def find_slots_that_fit_my_calendar(
+    day: Annotated[str, Field(description="Calendar day in the salon's time zone, as YYYY-MM-DD")],
+    service_id: Annotated[str, Field(description="A service_id from list_services")],
+) -> dict[str, Any]:
+    the_day = parse_day(day)
+    open_slots = backend.get_open_slots(the_day, service_id)
+    busy, status = busy_times_for_day(the_day)
+    fitting = filter_slots(open_slots, busy, buffer_minutes=CALENDAR_BUFFER_MINUTES)
+    result = slots_json(the_day, fitting)
+    result["calendars"] = status
+    result["buffer_minutes"] = CALENDAR_BUFFER_MINUTES
+    return result
 
 
 if __name__ == "__main__":
